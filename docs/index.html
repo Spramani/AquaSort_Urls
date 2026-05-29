@@ -583,9 +583,13 @@
             let lipX = tx + (-width/2) * cosR - (-height/2) * sinR;
             let lipY = ty + (-width/2) * sinR + (-height/2) * cosR;
             
-            // Target is top center of upright tube
+            // Target is the surface of the liquid in the upright tube, or the bottom if it's empty
             let targetX = rx;
-            let targetY = ry - height/2;
+            let targetY = ry + height/2 - (uprightLiquid * (height - 10)) - 4;
+            
+            // Interpolate target so the stream grows downward from the lip to the liquid surface
+            let currentTargetX = lipX + (targetX - lipX) * streamProgress;
+            let currentTargetY = lipY + (targetY - lipY) * streamProgress;
             
             // Draw Upright Tube
             drawTube(rx, ry, 0, uprightLiquid, streamColor, showStream, time);
@@ -597,12 +601,12 @@
                 ctx.lineWidth = 11 * streamProgress;
                 ctx.lineCap = "round";
                 
-                let cpX = (lipX + targetX) / 2;
-                let cpY = Math.min(lipY, targetY) - 15;
+                let cpX = (lipX + currentTargetX) / 2;
+                let cpY = Math.min(lipY, currentTargetY) - 15;
                 
                 ctx.beginPath();
                 ctx.moveTo(lipX, lipY);
-                ctx.quadraticCurveTo(cpX, cpY, targetX, targetY);
+                ctx.quadraticCurveTo(cpX, cpY, currentTargetX, currentTargetY);
                 ctx.stroke();
                 
                 // Glossy inner stream highlight
@@ -610,7 +614,7 @@
                 ctx.lineWidth = 2.5 * streamProgress;
                 ctx.beginPath();
                 ctx.moveTo(lipX, lipY);
-                ctx.quadraticCurveTo(cpX, cpY, targetX, targetY);
+                ctx.quadraticCurveTo(cpX, cpY, currentTargetX, currentTargetY);
                 ctx.stroke();
                 ctx.restore();
             }
