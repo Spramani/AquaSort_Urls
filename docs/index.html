@@ -240,129 +240,7 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
         }
 
-        .tube-graphic {
-            width: 60px;
-            height: 200px;
-            border: 3px solid rgba(255, 255, 255, 0.6);
-            border-radius: 0 0 30px 30px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            background: rgba(255,255,255,0.05);
-            margin: 0 15px;
-        }
 
-        .tube-graphic::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 5px;
-            width: 6px;
-            height: 90%;
-            background: rgba(255,255,255,0.15);
-            border-radius: 3px;
-        }
-
-        .liquid-segment {
-            width: 100%;
-            height: 48px;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            transition: all 0.5s ease;
-        }
-
-        .liquid-segment.pink { background-color: var(--accent-pink); bottom: 0; }
-        .liquid-segment.mint { background-color: var(--accent-mint); bottom: 48px; }
-        .liquid-segment.orange { background-color: var(--accent-orange); bottom: 96px; }
-        .liquid-segment.blue { background-color: var(--primary); bottom: 144px; }
-
-        /* Animated Pouring Graphic */
-        .pouring-tube {
-            width: 60px;
-            height: 200px;
-            border: 3px solid rgba(255, 255, 255, 0.6);
-            border-radius: 0 0 30px 30px;
-            position: absolute;
-            top: 40px;
-            right: 40px;
-            transform: rotate(70deg);
-            transform-origin: top left;
-            animation: pourAnimation 6s ease-in-out infinite;
-            background: rgba(255,255,255,0.05);
-        }
-
-        .pouring-liquid {
-            width: 100%;
-            height: 96px;
-            background-color: var(--primary);
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            animation: pourLiquidLevel 6s ease-in-out infinite;
-        }
-
-        .liquid-stream {
-            width: 10px;
-            height: 180px;
-            background: var(--primary);
-            position: absolute;
-            top: 45px;
-            left: 110px;
-            opacity: 0;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(14, 165, 233, 0.6);
-            animation: streamAnimation 6s ease-in-out infinite;
-            transform-origin: top;
-        }
-
-        .receiving-tube {
-            width: 60px;
-            height: 200px;
-            border: 3px solid rgba(255, 255, 255, 0.6);
-            border-radius: 0 0 30px 30px;
-            position: absolute;
-            bottom: 60px;
-            left: 70px;
-            background: rgba(255,255,255,0.05);
-            overflow: hidden;
-        }
-
-        .receiving-liquid {
-            width: 100%;
-            height: 0px;
-            background-color: var(--primary);
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            animation: receiveLiquidLevel 6s ease-in-out infinite;
-        }
-
-        @keyframes pourAnimation {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            20% { transform: translate(-30px, -20px) rotate(45deg); }
-            35%, 65% { transform: translate(-45px, -20px) rotate(85deg); }
-            80% { transform: translate(-10px, 0) rotate(15deg); }
-        }
-
-        @keyframes pourLiquidLevel {
-            0%, 20% { height: 96px; }
-            35%, 65% { height: 0px; }
-            80%, 100% { height: 0px; }
-        }
-
-        @keyframes streamAnimation {
-            0%, 23% { opacity: 0; height: 0px; }
-            26% { opacity: 1; height: 180px; }
-            30%, 60% { opacity: 1; height: 180px; }
-            64% { opacity: 0; height: 180px; }
-            68%, 100% { opacity: 0; height: 0px; }
-        }
-
-        @keyframes receiveLiquidLevel {
-            0%, 25% { height: 0px; }
-            62%, 100% { height: 96px; }
-        }
 
         /* Features Section */
         .features-section {
@@ -518,18 +396,7 @@
 
         <div class="hero-visual">
             <div class="animation-container">
-                <!-- Liquid stream pouring down -->
-                <div class="liquid-stream"></div>
-                
-                <!-- Receiving tube -->
-                <div class="receiving-tube">
-                    <div class="receiving-liquid"></div>
-                </div>
-
-                <!-- Pouring tube (animated) -->
-                <div class="pouring-tube">
-                    <div class="pouring-liquid"></div>
-                </div>
+                <canvas id="pourCanvas" width="320" height="420" style="width: 100%; height: 100%; display: block;"></canvas>
             </div>
         </div>
     </main>
@@ -564,5 +431,229 @@
         </div>
     </footer>
 
+    <script>
+        const canvas = document.getElementById('pourCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuration
+        const width = 54;
+        const height = 180;
+        
+        // Upright receiving tube center
+        const rx = 100;
+        const ry = 280;
+        
+        // Tilted pouring tube positions
+        const startTx = 220;
+        const startTy = 160;
+        const targetTx = 175;
+        const targetTy = 135;
+
+        let particles = [];
+
+        function drawTube(x, y, rotation, liquidLevel, liquidColor, isPouring, time) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            
+            // 1. Draw Liquid inside
+            if (liquidLevel > 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(-width/2 + 3.5, -height/2);
+                ctx.lineTo(-width/2 + 3.5, height/2 - width/2);
+                ctx.arc(0, height/2 - width/2, width/2 - 3.5, Math.PI, 0, true);
+                ctx.lineTo(width/2 - 3.5, -height/2);
+                ctx.closePath();
+                ctx.clip();
+                
+                let localLiquidY = height/2 - (liquidLevel * (height - 10));
+                ctx.translate(0, localLiquidY);
+                ctx.rotate(-rotation);
+                
+                ctx.fillStyle = liquidColor;
+                ctx.beginPath();
+                ctx.moveTo(-width * 2, 0);
+                
+                let waveFreq = isPouring ? 0.08 : 0.04;
+                let waveAmp = isPouring ? 3 : 1.2;
+                let waveSpeed = isPouring ? 0.015 : 0.005;
+                for (let wx = -width * 2; wx <= width * 2; wx += 5) {
+                    let wy = Math.sin(wx * waveFreq + time * waveSpeed) * waveAmp;
+                    ctx.lineTo(wx, wy);
+                }
+                ctx.lineTo(width * 2, height * 2);
+                ctx.lineTo(-width * 2, height * 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            // 2. Draw Glass Outline
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+            ctx.lineWidth = 3.5;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(-width/2, -height/2);
+            ctx.lineTo(-width/2, height/2 - width/2);
+            ctx.arc(0, height/2 - width/2, width/2, Math.PI, 0, true);
+            ctx.lineTo(width/2, -height/2);
+            ctx.stroke();
+            
+            // Inner Highlight
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-width/2 + 6, -height/2 + 10);
+            ctx.lineTo(-width/2 + 6, height/2 - width/2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function animate() {
+            const time = Date.now();
+            const cycle = time % 8000;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            let tx = startTx;
+            let ty = startTy;
+            let rotation = 0;
+            let tiltedLiquid = 0.6;
+            let uprightLiquid = 0;
+            let showStream = false;
+            let streamProgress = 0;
+            let streamColor = "#0ea5e9";
+            
+            if (cycle < 2000) {
+                // Phase 1: Idle
+                tx = startTx;
+                ty = startTy;
+                rotation = 0;
+                tiltedLiquid = 0.6;
+                uprightLiquid = 0;
+            } else if (cycle < 3000) {
+                // Phase 2: Move & Tilt
+                let p = (cycle - 2000) / 1000;
+                p = p * p * (3 - 2 * p); // smoothstep
+                tx = startTx + (targetTx - startTx) * p;
+                ty = startTy + (targetTy - startTy) * p;
+                rotation = (-75 * Math.PI / 180) * p;
+                tiltedLiquid = 0.6;
+                uprightLiquid = 0;
+            } else if (cycle < 6000) {
+                // Phase 3: Pouring
+                tx = targetTx;
+                ty = targetTy;
+                rotation = -75 * Math.PI / 180;
+                showStream = true;
+                
+                let p = (cycle - 3000) / 3000;
+                let pourTime = (cycle - 3000);
+                streamProgress = Math.min(1, pourTime / 250);
+                
+                tiltedLiquid = 0.6 - 0.5 * p;
+                uprightLiquid = 0.55 * p;
+            } else if (cycle < 7000) {
+                // Phase 4: Tilt back & Move back
+                let p = (cycle - 6000) / 1000;
+                p = p * p * (3 - 2 * p);
+                tx = targetTx + (startTx - targetTx) * p;
+                ty = targetTy + (startTy - targetTy) * p;
+                rotation = (-75 * Math.PI / 180) * (1 - p);
+                tiltedLiquid = 0.1;
+                uprightLiquid = 0.55;
+            } else {
+                // Phase 5: Fade / Reset
+                tx = startTx;
+                ty = startTy;
+                rotation = 0;
+                
+                let p = (cycle - 7000) / 1000;
+                tiltedLiquid = 0.1 + 0.5 * p;
+                uprightLiquid = 0.55 * (1 - p);
+            }
+            
+            // Calculate pouring lip position for tilted tube
+            // Tilted tube is rotated by `rotation` around `(tx, ty)`
+            // Lip is at `(-width/2, -height/2)` in local coords.
+            let cosR = Math.cos(rotation);
+            let sinR = Math.sin(rotation);
+            let lipX = tx + (-width/2) * cosR - (-height/2) * sinR;
+            let lipY = ty + (-width/2) * sinR + (-height/2) * cosR;
+            
+            // Target is top center of upright tube
+            let targetX = rx;
+            let targetY = ry - height/2;
+            
+            // Draw Upright Tube
+            drawTube(rx, ry, 0, uprightLiquid, streamColor, showStream, time);
+            
+            // Draw Stream
+            if (showStream) {
+                ctx.save();
+                ctx.strokeStyle = streamColor;
+                ctx.lineWidth = 11 * streamProgress;
+                ctx.lineCap = "round";
+                
+                let cpX = (lipX + targetX) / 2;
+                let cpY = Math.min(lipY, targetY) - 15;
+                
+                ctx.beginPath();
+                ctx.moveTo(lipX, lipY);
+                ctx.quadraticCurveTo(cpX, cpY, targetX, targetY);
+                ctx.stroke();
+                
+                // Glossy inner stream highlight
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.lineWidth = 2.5 * streamProgress;
+                ctx.beginPath();
+                ctx.moveTo(lipX, lipY);
+                ctx.quadraticCurveTo(cpX, cpY, targetX, targetY);
+                ctx.stroke();
+                ctx.restore();
+            }
+            
+            // Generate bubbles
+            if (uprightLiquid > 0 && showStream && Math.random() < 0.25) {
+                let surfaceY = ry + height/2 - (uprightLiquid * (height - 10));
+                particles.push({
+                    x: rx + (Math.random() - 0.5) * (width - 16),
+                    y: ry + height/2 - 12,
+                    targetY: surfaceY,
+                    vy: -(Math.random() * 1.5 + 0.8),
+                    size: Math.random() * 2 + 1,
+                    alpha: 0.85
+                });
+            }
+            
+            // Draw bubbles
+            ctx.save();
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.y += p.vy;
+                if (p.y <= p.targetY) {
+                    p.alpha -= 0.08;
+                }
+                if (p.alpha <= 0 || p.y < ry - height/2) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+            
+            // Draw Tilted Tube (drawn on top of the stream)
+            drawTube(tx, ty, rotation, tiltedLiquid, streamColor, showStream, time);
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
 </body>
 </html>
