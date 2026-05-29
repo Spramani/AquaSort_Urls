@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -110,6 +111,7 @@
             .grid-container {
                 grid-template-columns: 1fr;
             }
+
             .hero-title {
                 font-size: 2.2rem;
             }
@@ -149,7 +151,8 @@
             margin-top: 0.75rem;
             line-height: 1.5;
             font-size: 0.95rem;
-            display: none; /* Can be toggled with JS */
+            display: none;
+            /* Can be toggled with JS */
         }
 
         .faq-card.active .faq-answer {
@@ -197,7 +200,8 @@
             letter-spacing: 0.5px;
         }
 
-        input, textarea {
+        input,
+        textarea {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
@@ -208,7 +212,8 @@
             transition: all 0.3s ease;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus {
             border-color: var(--primary);
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 10px rgba(14, 165, 233, 0.2);
@@ -283,6 +288,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -310,7 +316,9 @@
                             <span class="faq-toggle-icon">+</span>
                         </div>
                         <div class="faq-answer">
-                            Tap or drag a glass tube to select it, then tap another tube to pour. You can only pour liquid if the destination tube has enough space and the top liquid color matches the liquid you are pouring. Sort all colors so each tube contains a single color to win!
+                            Tap or drag a glass tube to select it, then tap another tube to pour. You can only pour
+                            liquid if the destination tube has enough space and the top liquid color matches the liquid
+                            you are pouring. Sort all colors so each tube contains a single color to win!
                         </div>
                     </div>
 
@@ -324,7 +332,8 @@
                             <ul>
                                 <li>Use the <strong>Undo</strong> button to step back a move.</li>
                                 <li>Click the <strong>Hint</strong> lightbulb to see potential moves.</li>
-                                <li>Click the <strong>Add Tube</strong> button to add a temporary empty tube to the level.</li>
+                                <li>Click the <strong>Add Tube</strong> button to add a temporary empty tube to the
+                                    level.</li>
                                 <li>Restart the level at any time using the restart button in the top right.</li>
                             </ul>
                         </div>
@@ -336,7 +345,8 @@
                             <span class="faq-toggle-icon">+</span>
                         </div>
                         <div class="faq-answer">
-                            Go to the Themes tab from the home page. You can unlock premium gradient themes using the coins you earn by completing levels, or unlock the Custom Theme creator to build your own.
+                            Go to the Themes tab from the home page. You can unlock premium gradient themes using the
+                            coins you earn by completing levels, or unlock the Custom Theme creator to build your own.
                         </div>
                     </div>
 
@@ -346,7 +356,9 @@
                             <span class="faq-toggle-icon">+</span>
                         </div>
                         <div class="faq-answer">
-                            If you reinstalled the app or changed devices, open the Shop/Subscription menu in settings and tap <strong>Restore Purchases</strong>. Your purchases are linked to your App Store account.
+                            If you reinstalled the app or changed devices, open the Shop/Subscription menu in settings
+                            and tap <strong>Restore Purchases</strong>. Your purchases are linked to your App Store
+                            account.
                         </div>
                     </div>
                 </div>
@@ -366,7 +378,8 @@
                     </div>
                     <div class="form-group">
                         <label for="message">Message</label>
-                        <textarea id="message" required placeholder="How can we help you? Describe the issue..."></textarea>
+                        <textarea id="message" required
+                            placeholder="How can we help you? Describe the issue..."></textarea>
                     </div>
                     <button type="submit" class="btn-submit">Submit Ticket</button>
                 </form>
@@ -394,9 +407,32 @@
 
         function submitForm(event) {
             event.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // Replace with your support email address
+            const supportEmail = "support@yourdomain.com"; 
+            
+            const subject = encodeURIComponent("AquaSort App Support Ticket");
+            const body = encodeURIComponent(
+                "AquaSort Support Ticket\n" +
+                "-----------------------\n" +
+                "Name: " + name + "\n" +
+                "Reply Email: " + email + "\n\n" +
+                "Message:\n" + message
+            );
+            
+            // Open the mail client
+            window.location.href = "mailto:" + supportEmail + "?subject=" + subject + "&body=" + body;
+            
+            // Display visual success confirmation inside browser
             document.getElementById('contactForm').style.display = 'none';
+            document.getElementById('successMsg').innerHTML = "Opening your email app...<br><span style='font-weight: normal; font-size: 0.9rem; opacity: 0.8;'>Please send the prefilled email in your mail application to finish submitting your ticket.</span>";
             document.getElementById('successMsg').style.display = 'block';
         }
     </script>
 </body>
+
 </html>
